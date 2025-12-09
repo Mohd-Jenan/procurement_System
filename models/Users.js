@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   id: { type: Number, unique: true },
   name: { type: String, required: true },
-  email: { type: String },
-  mobile: { type: String },
+  email: { type: String,required:true },
+  mobile: { type: String,required:true },
   password: { type: String, required: true },
   role: {
     type: String,
@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   assignedTo: { type: Number, default: null }, // for inspection_manager under procurement_manager
-  createdBy: { type: Number }, //by whom a user createdBy
+  createdBy: { type: Number }, 
 });
 
 module.exports = mongoose.model('User', userSchema);

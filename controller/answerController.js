@@ -2,6 +2,7 @@ const Answer = require("../models/answer")
 const Checklist = require('../models/checklist');
  const User = require('../models/Users');
  const Order = require("../models/order")
+ const {client:redis}=require("../Redis/redis");
 exports.submitAnswers = async (req, res) => {
   try {
     const { orderId, checklistId} = req.body;
@@ -12,7 +13,6 @@ exports.submitAnswers = async (req, res) => {
     if (loggedInUser.role!== 'inspection_manager') {
       return res.status(403).json({ message: 'Only inspection manager can submit checklist' });
     }
-    // Validate numeric fields before using them
     if (!orderId || isNaN(Number(orderId))) {
       return res.status(400).json({ message: "Invalid or missing orderId" });
     }
@@ -91,7 +91,20 @@ exports.getAllAnswers = async (req, res) => {
   if (user.role !== 'admin')
     return res.status(403).json({ message: 'Only admin can view all answers' });
 
-  const allAnswers = await Answer.find().populate('checklistId orderId filledBy');
-  res.json(allAnswers);
+  try{
+    const cachedData=await redis.get("allAnswers")
+    if(cachedData){
+      console.log("data is retreived from cache");
+      return res.json(JSON.parse(cachedData))
+    }
+    const allAnswers = await Answer.find().populate('checklistId orderId filledBy');
+    await redis.set("allAnswers",JSON.stringify(allAnswers))
+    console.log("giving res from DB");
+    res.json(allAnswers)
+  }catch(err){
+    console.log("Error while fetching answers",err);
+    return res.status(500).json({message:"Server error",err})
+  }
+ 
 };
 

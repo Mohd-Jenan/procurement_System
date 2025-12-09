@@ -8,7 +8,6 @@ exports.createChecklist = async (req, res) => {
     if (!user || user.role !== 'procurement_manager') {
       return res.status(403).json({ message: 'Only procurement manager can create checklist' });
     }
-
     const lastChecklist = await Checklist.findOne().sort({ id: -1 });
     const newId = lastChecklist ? lastChecklist.id + 1 : 1;
 

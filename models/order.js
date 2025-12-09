@@ -8,7 +8,7 @@ const orderSchema = new mongoose.Schema({
   quantity: { type: Number, required: true },
   status: {
     type: String,
-    enum: ['Pending', 'In-Progress', 'Inspection Done', 'Completed'],
+    enum: ['Pending', 'In-Progress','Cancelled','Inspection Done', 'Completed'],
     default: 'Pending'
   },
   checklistId: { type: Number }, // for linking the checklistId in order

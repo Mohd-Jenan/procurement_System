@@ -4,7 +4,6 @@ const fs = require('fs');
 
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 
-// for uploading dir exists
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -26,10 +25,6 @@ const fileFilter = (req, file, cb) => {
   else cb(new Error('Only image files are allowed (jpeg, png, webp).'), false);
 };
 
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
-});
+const upload = multer({storage,fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
 module.exports = upload;

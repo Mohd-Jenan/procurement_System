@@ -5,7 +5,7 @@ const answerItemSchema = new mongoose.Schema({
   questionText: String,
   value: mongoose.Schema.Types.Mixed, // value can be string, boolean, array, or image URL
   imageUrl: String 
-}, { _id: false }); // disable automatic _id for nested objects
+}, { _id: false }); 
 
 const answerSchema = new mongoose.Schema({
   id: Number,

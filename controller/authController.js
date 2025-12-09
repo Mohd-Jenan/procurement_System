@@ -1,6 +1,6 @@
 const User = require('../models/Users');
-// const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const userValidation=require("../validations/userValidation")
 
 
 const generateToken = (user) => {
@@ -14,43 +14,52 @@ const generateToken = (user) => {
 
 exports.createUser = async (req, res) => {
   try {
+    const {error}= userValidation.validate(req.body)
+    if(error){
+      return res.status(400).json({message:error.message})
+    }
     const { name, email, mobile, password, role, assignedTo } = req.body;
 
-    const creator = req.user; 
+    const creator = req.user;
     if (!creator) return res.status(403).json({ message: 'Unauthorized' });
 
     if (creator.role === 'admin') {
       if (!['procurement_manager', 'inspection_manager', 'client'].includes(role))
         return res.status(400).json({ message: 'Admin can create only procurement_manager, inspection_manager, or client' });
-    } 
+    }
     else if (creator.role === 'procurement_manager') {
       if (!['inspection_manager', 'client'].includes(role))
         return res.status(400).json({ message: 'Procurement manager can create only inspection_manager or client' });
-    } 
+    }
     else {
       return res.status(403).json({ message: 'Only admin or procurement manager can register users' });
     }
 
-    
     let existingUser = null;
-    if (email) existingUser = await User.findOne({ email });
-    if (!existingUser && mobile) existingUser = await User.findOne({ mobile });
-
-    if (existingUser)
-      return res.status(400).json({ message: 'User already exists, contact admin' });
-
+    if (email) {
+      existingUser = await User.findOne({ email });
+      if(existingUser){
+         return res.status(400).json({message:"Email already exist"})
+      }
+    }
+    if (!existingUser && mobile) {
+      existingUser = await User.findOne({ mobile });
+      if(existingUser){
+      return res.status(400).json({message:"mobile number is already used"})
+      }
+    }
     
     let assignedToFinal = null;
-    if (role === 'inspection_manager') {
-      assignedToFinal = creator.role === 'procurement_manager' ? creator.id : assignedTo || null;
-    }
 
-    
+    if (role === 'inspection_manager') {
+      if (creator.role === 'procurement_manager') {
+        assignedToFinal = creator.id;
+      } else {
+        assignedToFinal = assignedTo || null;
+      }
+    }
     const lastUser = await User.findOne().sort({ id: -1 });
     const newId = lastUser ? lastUser.id + 1 : 1;
-
-    // const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = new User({
       id: newId,
       name,
@@ -58,7 +67,7 @@ exports.createUser = async (req, res) => {
       mobile,
       password,
       role,
-      createdBy:creator.id,
+      createdBy: creator.id,
       assignedTo: assignedToFinal
     });
 
@@ -84,14 +93,30 @@ exports.createUser = async (req, res) => {
 exports.loginUser = async (req, res) => {
   try {
     const { email, mobile, password } = req.body;
-
+    if (!email && !mobile) {
+      return res.status(400).json({ message: 'Email or mobile is required' });
+    }
+   
     let user;
-    if (email) user = await User.findOne({ email });
-    else if (mobile) user = await User.findOne({ mobile });
+    if (email) {
+      user = await User.findOne({ email });
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid email address' });
+      }
+    } else if (mobile) {
+      user = await User.findOne({ mobile });
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid mobile number' });
+      }
+    }
+    if (['admin', 'client', 'procurement_manager'].includes(user.role) && !email) {
+      return res.status(400).json({ message: 'This role requires email login' });
+    }
+    if (user.role === 'inspection_manager' && !mobile) {
+      return res.status(400).json({ message: 'Inspection Manager must login using mobile number' });
+    }
 
-    if (!user) return res.status(400).json({ message: 'User not found' });
-
-    if (user.password !== password) 
+    if (user.password !== password)
       return res.status(400).json({ message: 'Invalid credentials' });
 
     const token = generateToken(user);
@@ -113,15 +138,13 @@ exports.loginUser = async (req, res) => {
 
 exports.getInspectionManagers = async (req, res) => {
   try {
-    const user = req.user; 
-
+    const user = req.user;
     if (user.role === 'admin') {
       const all = await User.find({ role: 'inspection_manager' });
       return res.json(all);
     }
 
     if (user.role === 'procurement_manager') {
-      // Procurement Manager sees only their own inspection managers
       const ims = await User.find({
         role: 'inspection_manager',
         assignedTo: user.id

@@ -1,9 +1,8 @@
 const Order = require('../models/order');
-const Checklist = require('../models/checklist'); // assume you have a checklist model
+const Checklist = require('../models/checklist'); 
 const User = require('../models/Users');
 
-// for new orderId
-const getNextOrderId = async () => {
+const getNextOrderId =async() => {
   const lastOrder = await Order.findOne().sort({ id: -1 });
   return lastOrder ? lastOrder.id + 1 : 1;
 };
@@ -40,10 +39,7 @@ exports.createOrder = async (req, res) => {
       createdBy:userDoc._id
      
     });
-
-    
     await order.save();
-
     res.status(201).json({
       message: 'Order created successfully',
       order
@@ -61,7 +57,6 @@ exports.getOrders = async (req, res) => {
     if (!user) return res.status(403).json({ message: 'Unauthorized' });
 
     let orders = [];
-
     if (user.role === 'admin') {
       orders = await Order.find();
     } 

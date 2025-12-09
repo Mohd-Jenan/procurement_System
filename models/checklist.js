@@ -8,7 +8,7 @@ const QuestionSchema = new mongoose.Schema({
     enum: ['boolean', 'single_choice', 'multiple_choice', 'dropdown', 'text', 'image'],
     required: true
   },
-  options: [String], // for dropdown, single_choice, multiple_choice
+  options: [String], // for type field
   required: { type: Boolean, default: false } 
 });
 
